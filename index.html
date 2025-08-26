@@ -1,327 +1,167 @@
-<!doctype html>
-<html lang="tr">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Ay'a Ulaş - Basit HTML Oyun</title>
+<meta charset="UTF-8">
+<title>Reach the Moon Game</title>
 <style>
-  :root{--bg:#0b1220;--moon:#f2f3f7;--panel:#0f1724;--accent:#ffd166}
-  html,body{height:100%;margin:0;font-family:Inter,Segoe UI,Arial;background:linear-gradient(180deg,#021022 0%, #041427 60%, #081226 100%);color:#e6eef8}
-  #gameWrap{max-width:900px;margin:18px auto;padding:14px;background:rgba(255,255,255,0.02);border-radius:12px;box-shadow:0 6px 30px rgba(2,6,23,0.6)}
-  header{display:flex;align-items:center;justify-content:space-between;gap:12px}
-  h1{font-size:20px;margin:0}
-  .controls{font-size:13px;opacity:0.9}
-  #canvas{display:block;background:linear-gradient(#071226,#051827);border-radius:8px;margin-top:12px;width:100%;height:640px}
-  #hud{display:flex;gap:12px;align-items:center;margin-top:8px}
-  .panel{background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(255,255,255,0.01));padding:8px 12px;border-radius:8px;font-size:14px}
-  #instructions{margin-top:10px;font-size:13px;opacity:0.95}
-  button{background:var(--accent);border:none;padding:8px 12px;border-radius:8px;cursor:pointer;color:#041226;font-weight:600}
-  footer{font-size:12px;opacity:0.8;margin-top:10px}
-  /* mobile adjustments */
-  @media(max-width:520px){ #canvas{height:520px} header{flex-direction:column;align-items:flex-start} }
+  html, body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: linear-gradient(to top, #001 0%, #00f 100%);
+    font-family: Arial, sans-serif;
+  }
+  #gameCanvas {
+    display: block;
+    background: #000;
+    margin: 0 auto;
+  }
+  #message {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #fff;
+    font-size: 48px;
+    text-align: center;
+    display: none;
+  }
+  #score {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    color: #fff;
+    font-size: 24px;
+  }
 </style>
 </head>
 <body>
-<div id="gameWrap">
-  <header>
-    <div>
-      <h1>Reach the Moon </h1>
-      <div class="controls">Use the arrow keys to move right/left. Press the space bar to jump. Mission: Reach the moon (the target above).</div>
-    </div>
-    <div>
-      <button id="restartBtn">Restart</button>
-    </div>
-  </header>
-
-  <canvas id="canvas" width="900" height="640"></canvas>
-
-  <div id="hud">
-    <div class="panel">Point: <span id="score">0</span></div>
-    <div class="panel">Height: <span id="height">0</span> m</div>
-   
-  </div>
-
-  <div id="instructions">
-    Bu oyun tek dosyalı (HTML). Karakterinizle platformlara zıplayarak yukarı çıkın. Ay'a ulaşırsanız kazanırsınız. Karakter görseliniz dosyaya base64 olarak gömülüdür.
-  </div>
-
-  <footer>Hazırlandı — İyi eğlenceler! Dosyayı indirmek için <a id="downloadLink" href="#">buraya tıkla</a>.</footer>
-</div>
-
+<canvas id="gameCanvas" width="400" height="600"></canvas>
+<div id="score">Score: 0</div>
+<div id="message">Real Hype Lamumu!</div>
 <script>
-/* === Kullanıcı tarafından verilen base64 görsel buraya yerleştirildi === */
-const playerImgSrc = "data:image/jpeg;base64,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";
+// Canvas setup
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+const width = canvas.width;
+const height = canvas.height;
 
-/* === Game variables === */
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
-let W = canvas.width, H = canvas.height;
-const gravity = 0.6;
-let keys = {};
+// Game variables
+let player = {
+    x: width/2 - 25,
+    y: height - 100,
+    width: 50,
+    height: 50,
+    speed: 5
+};
+
+let meteors = [];
+let spawnRate = 1000; // ms
+let lastSpawn = Date.now();
 let score = 0;
-let maxHeight = 0;
 let gameOver = false;
-let win = false;
+let reachedMoon = false;
 
-/* === Player === */
-const player = {
-  x: W/2 - 32,
-  y: H - 120,
-  w: 64,
-  h: 64,
-  vx: 0,
-  vy: 0,
-  speed: 4.2,
-  onGround: false,
-  sprite: new Image()
-};
-player.sprite.src = playerImgSrc;
+// Base64 character image
+const charImg = new Image();
+charImg.src = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCABkAGQDASIAAhEBAxEB/8QAHAABAAICAwEAAAAAAAAAAAAAAAYHBQgBAwQC/8QAOhAAAQMEAQMDAgMGAgsAAAAAAQIDBAAFBhESByExExRBIlEIYZEVIzJCcYFSchYkNENikpOiscHw/8QAGQEBAAMBAQAAAAAAAAAAAAAAAAIDBAEF/8QAJxEAAwACAgIBAwQDAAAAAAAAAAECAxEEMRIhQTJxkQUVIlFhweH/2gAMAwEAAhEDEQA/ANtqUpVJcKUqLZlmLVlmMWW1wHb3kctBcjWxhYQQ2OxeecPZlkHys+T2SFGg2SoAk6AJP2HesHd8uxOzrLd2yixwHB5RIuDSFfoVbqBx7bHym/v2XN84Zu10ZQHH8dtcxUSHGQf8aEEPPAbGy4oDuPpANSm3YliNlHpWfG7HEQP5mrc0CT/Ugk/3NdUo5tndD6jYBKcDcbN8bdcJ0EpubQJP2GzUAyjPMymZ3cbBYrhZrXEiqa9u8qMJS5TbiOSXeZUEBJPJOkg6KTs1Yku2WmY0W5dqtclBGuL0FpQ/Qpqjeq/TVFovtwyi2SsRxuxvQ/YpWXFwhHLn0qUsISoOqJ2UhPHXft81TyIyPE1jemX8SsU5N5VtEr6c9Zrpd7XMZk4vcL5LgSVtOzrcGY8d5vy24kOuAhRGyQO3YHfcVYWK55ZL9cFWpImWy7hv1Dbrix6L6kDytHcpcT+aCqqBw+NbIFrsuOXmAu6MQJbkq+Q4I9UXFpxBEeW0lJBkRt8PpTvQABBKdV9ZpIh2+zTmrNbpNpZn3VtzF2JCVNvW8obSX5TaN8mUcgohHbfLRACtVgnlXH1671rp/f8A2alxFlvxxLvr+jaX438VxWvHRnrLl9zvkWz5FD/bjb0v2b8qDb1tuxHd65L4gtqb8EnaVJB8Gth/v+VelNKltGTLhrDXhfYpSlSKhSlcigI71CyReMY6ZcWKJ10kvIh2yFvXuZTh02gn4SO6lH4SlRqN/ss4B07v2QvSP2pfVxHp9xnLT9c6QhtRB/4WknSUN+EpH3JNLxJjzur7kma+03bsSsokFbqwltuTLKgXFE9hxYaUNnx6hrB3ua91OcMVKpFvwhwFJUFlmRe0j+VHhSI3yVfxOdvCfMkjhq9jl7vGP3uJlNteS9eYzipS1v7IkrcSfVDncEhez9vA+1bN4/ByHJ7DBvcnqRfxHnx0SGm7ZDZgISlY2BopWvf+ZR+9Re09AcdjXEOXK+XS6wEK2iC6lDSVgeEuLQNrA8aGt/NW60hDbSWm0IQhACUpSkJCQOwAA7AaAFEhoqLq2/dcIskZ+159mSrnLe4sNyZ7b7fFPdalJU33Hga7dzVP5Pn2W5o1GgZFcWJka1vqW043GSyt14o1tYT2PEE6Oh/ETUy/EjOXI6hIhlR9OHBaSkfmvayf/H6VVb8MLdL7Tzkd0pCVLRohQ+Ng9jXNgvL8N1utOXYteMYvkb3LdkltyLY8hwtvxESEkqS04khSBzSo6Hbue1YvrpiV6xi+N3lWQ3aTZFxExo02WEPmK7yJ9JxXEEJWrRSvXfuknYFVliVyu2LX1q/WS4uNXRs93FjaHkdgWnEDsps68eQe47itnsWy7Hur+E3THCoW67yISmpMBxe3GF/yPNn/AHiEuBBCh3BABAqq8MZO17/s0cblXx7Vz+CP9Den2X2V3GcmtFxtabdOjtP3Dmt5p+Sy6jktDrWihboUraXOQI140SK2CH61HumF9dyTp7ZL3JATKkxE+5GvDydodH9lpV+tSH+9SmFK0iu8jyV5V2KUpUiArx3y5wrNZJ14uT3owoMdciQ5rfFCQSTr57DxXsrEZtZoeQYbd7HcHzHjT4jjDrwUAWuQ0F9+2wdHv27UBQ8e4s3+75DdMpsEx+4Tb5HXDxxp4KS8EQWlMmQTpGkIVzVy+hKleFECsrj5yC59YWn79KhqFtsrj6IcRB9GIuQ4G0jmrSnFlDatkgADsAB5xjr+XY1l17byGPa7dNkQosv3LiXXolyEZPoPLaLQLjauKmVlJSeOjsEaNZHpFcl3S+5rdHDDfke5hRx7UO+n6SWDx4+qlKyNqV5A2d6qLb3v4Lsc43Gl9RIMp6i4njV4/Zd3uDrchCEOSPSiuPIioV2St5SQQ0D8FXx3qVNEOJSpohYUAUlJ2FA9wR9xo/FeCDAhcLis29htVxUTN+j/AGo8OH17/i+kBPftqpHaLdJt7FkjWRu3R7Wygty0LbX6gbDem0skHQ4qABCt/T4qcvaKqlw9M1n/ABL2h+JnEa5KbUlqfEQkKI19bZKVD9Ck1UEycmLBt1wMi3ux5rzrIabk8pLXpqA5uN6+hKifp2e4BNbxdQsROY2u722+KhIt4Q25a3mW1GTGeCVc1qJPEgnQCR5G9/Faa37pBdseyZpu9BbFudkJHvG2itjgVfxch4A86IB+9ca0RXt6MTeAo2yVxJCktlQ4nvtPft+lTK7YbkuLSLZkLT5kQ0OsPxLvAJQuOVlPErT5b3sAnug+D5r19UMWx7HoMZy05Ai4LkBaXWi42tQTxJ9QcfCfjR/9Vk8E6n3d+yWuxSLLGjwoMBKrhMeDy9RWUclniUhIKgkJBJI2oa3UN09NGiYifJX38Fp/h0z1t/Jcg6eSo6GlQ7lcJNtfSo6eb9youoI+FJUrY12KT8a73gPFa+fhg6Y5Bbbw7nmXRVW6U+08IcBZ26C+vm667rskkdkp86JJ76FbCfNTKEcUpSgA1o78VUvVW7Rcxkf6E22E5cIsG7RjfnVpCYrSGz6io6iTtxato+lI1o9zVtVXvV3E2XoycsslnddyKBJjuqVBHGRLjpcAdZIBAd/dlWkq+3Yis/KnLWGli+onicq159Fb5VY8ijpx612jLbgqc1dEs4w08lCRDUpKioPSNFxxpLQWnidFSSBpR1WXvF/WzlMjI2ogt2QsQfRyLG50lDTsmO0VKRJiurIQ9w2rSt6UhRSrioCodIuWX3zqlGwrIpMfGGJc1h6IlURLz8RQAejKS6FD94vg4knuEq2nRqZ/ivyXEXsUdwuahidkEtTa4rXBKzb9uJPrOqIPppIGikaUoEgD5rP+lzyYw65L3RZynjeTePozeJ59iGTsIXaL9DW4tIV7d9fovp337tr0f02PzqWxZExlH+rrc4H4SOQrTbK8RlWa63K2yoTkhNtcbbecgS0vsBTiUqSEtyE8gdLTtPLtyAr0uYPmlv5IFpyuKEnWkWxxQH/Qe1+leo5aMytPo3CkyJz6NPKdUn5HHQrEXa7Wq0R1P3a6QYLWvqVJfQ2D+p7/ANK1Ml2DK0RnnpicrDDLZW6tdrmcUJA2SeTugABXks2LzrldoEOFb7xIlz1FMcqZjxOWklZPNZWoDiN7opemx5pPTL0lZLiWbyp+O2CfZrdbENc73eXvSjKMXf1ojhYSpXIfSp3slAUdbURU5gNHqFJgsxIrsXA7e628FOtqb/bDjWvSbbQdERWykKKlAeoUpAHEbNCYHY8exTrbaI/UJMJtLCOSFl8zWm5TgIaRJccASkAHkClPEK47Ircvxv5Pg/NQXr0O2B4Oz3J2f61xSlcJClKUAp/KQfFKUBrR+MWVCjZjjDcf1od1diuBU1C+HpJDqfQUPkqQ8OQI8AmvPZ8Swa74VH6iFiZF9rEdk3KIqQV+4ksci56zitrUrmk7O9kEeBV0dXumFg6lWePDuy34kqIVe0nR9eozyGlJ0RpSTobB+wIII3VDPYDm1n6U50Mnk3S3W+AlLrEVh5sR7g8VJS86rjtamlBKFcSUgkq2Dqoym6+4daj32iDWWVkl3tjNykS5irvc7smfIQ/bwYvo8kuh4ubBJBSlIb7dgBoDvVtPdYczsvFqRDxd9Tn1KWiJJTxRsAuLKVnijkpKSfGzqsK6iMIqkJUsOcinSewCfHb7dvH5iuzpnKwaHYZNnu6rKzcJjr1teLjmnZ7SDoF3ZPAqJI7kBRGx5q/9Tv8Ab8KpS72/x/wx8JvlZGvLx9fk7+pnUDOrzg93hO2WwJS/GU2oRVSPXUnsVpTyOtkbHcfNRjCMn9pn8eaj218bi2t5UNcRKo7T8l1pCvaJLnh1KUuAf4iANAmucXSl2Gqc2n2sWaoOx4oeW8mK3rQSFrJUo9tk+N+BUmyrH48aNHZmOsS2pKAXG1IKu47kgfbxr53Wnxh+CTcuk/Xf+fbKVkr+Va8lPz0RLrzHizMkj5JEUJVqv9vakMuKR9C/p4lJ/PWiR5Hf7VeP4U8omX3p07arm669MsT4iJddJKnY6kBbKiT5ISSnfzwqnrLfM5tMR/CcNxxnII7AXMiJLAecitqXooKVkJ4haiUq7nuQRobq3ehceVjMiSxnl6it5nlL4ktW1chCnkMsN8UJ4p7AhPIkDsNgDejWS8fhTlm7Hc2vKS3qUpUCwUpSgFKUoBWC6h2hV+wG/wBlRr1J1ufZb/zlB4/9wFZ2vPNlLihK22FuHfkeB/WkhrZq5irltueNCfLkOMyHIrbjTYT/ABLKe4P57BH5f1rA3K72uCuRFuNukstuqAW6qCVsyNgAbKQQT8aPfdcdVsay7FMynpx+DcnrDKd9xDDEH3SGQskuNkgcklKiogH+UjVdnSrHMxyfMbc9eIsyPYochEuU49AMVLqmzybbTy+pRKwknXYAHfmvQjkzKfttv4+F9jzXxKbS1pHfHucP3qLQ3FmNPenzShyC6zwbT2/mSABvsPzrKthpTC1OvEOfyI0TyJ+d/wDxqXfiWtt/nw7dlliaXIn27lGlNNMl0rirIVy4A8iUrSD276Ue3aqHjXvMZzntI9vkLeUeCEM2mQpa9jW0gnXf7mtGPmxr+fZTk4NqtT0WL0+ez6Fll6yPCrK9c0MNN255r00ONqUQXdKBUlaSNoIUnY+FJ7gjt6MdKOoI6qWzI8qtEi3exlmfPnSpCHHJbvFQCUlKlFWyrvvQSBr8qt7oLZZuJ9P4luuMUu3SU4uZcSnR0+5oFI0NaSlKU/2NWYBrZCQDXl5b87dHp4cfhCkDsNUpSqy0UpSgFKUoBXI8mlKA4SEnykHt9q+PQYWCVstqP3I7+KUowG40fZ/cN/8AKK++CRoAdu1KUB9eCNV8jxSlAKUpQClKUB//2Q==";
 
-/* === Moon (goal) === */
-const moon = {
-  x: W/2 - 48,
-  y: -2400, // far above — player must climb
-  r: 72
-};
+// Ay position
+const moonY = -200; // Y pos where moon is located
 
-/* === Platforms === */
-let platforms = [];
+// Key handling
+let keys = {};
+document.addEventListener('keydown', e => keys[e.key] = true);
+document.addEventListener('keyup', e => keys[e.key] = false);
 
-function rand(min,max){return Math.random()*(max-min)+min;}
-function createInitialPlatforms(){
-  platforms = [];
-  // ground
-  platforms.push({x:0,y:H-20,w:W,h:20});
-  // add ascending platforms up to moon
-  let y = H - 80;
-  while(y > moon.y - 200){
-    const w = rand(80,180);
-    const x = rand(40, W - w - 40);
-    platforms.push({x:x,y:y,w:w,h:14});
-    y -= rand(70,120);
-  }
-  // Add some moving platforms
-  for(let i=0;i<8;i++){
-    const w=rand(90,150);
-    const x=rand(40,W-w-40);
-    const yPos = rand(moon.y+200, H-150);
-    platforms.push({x:x,y:yPos,w:w,h:12,dx: (Math.random()>0.5?1:-1)*rand(0.6,1.4),range:rand(50,220),originX:x});
-  }
+// Meteor class
+class Meteor {
+    constructor(){
+        this.x = Math.random()*(width-30);
+        this.y = -30;
+        this.width = 30;
+        this.height = 30;
+        this.speed = 3 + Math.random()*3;
+    }
+    update(){
+        this.y += this.speed;
+        if(this.y > height) this.y = -30;
+    }
+    draw(){
+        ctx.fillStyle = 'red';
+        ctx.beginPath();
+        ctx.arc(this.x+15,this.y+15,15,0,Math.PI*2);
+        ctx.fill();
+    }
 }
 
-createInitialPlatforms();
-
-/* === Camera/World offset to simulate ascent === */
-let cameraY = 0;
-
-function resetGame(){
-  score = 0;
-  maxHeight = 0;
-  gameOver = false;
-  win = false;
-  player.x = W/2 - player.w/2;
-  player.y = H - 120;
-  player.vx = 0;
-  player.vy = 0;
-  cameraY = 0;
-  createInitialPlatforms();
-  document.getElementById('status').innerHTML = "";
+function spawnMeteor(){
+    meteors.push(new Meteor());
 }
 
-resetGame();
-
-/* === Input handlers === */
-window.addEventListener('keydown', e=>{ keys[e.code]=true; if(e.code==='Space'){ e.preventDefault(); }});
-window.addEventListener('keyup', e=>{ keys[e.code]=false; });
-
-document.getElementById('restartBtn').addEventListener('click', ()=>{ resetGame(); });
-
-/* === Main loop === */
+// Game loop
 function update(){
-  if(gameOver || win){ draw(); return; }
-  // horizontal movement
-  if(keys['ArrowLeft'] || keys['KeyA']) player.vx = -player.speed;
-  else if(keys['ArrowRight'] || keys['KeyD']) player.vx = player.speed;
-  else player.vx = 0;
-  // jump
-  if((keys['Space'] || keys['ArrowUp'] || keys['KeyW']) && player.onGround){
-    player.vy = -12.6;
-    player.onGround = false;
-  }
-  player.vy += gravity;
-  player.x += player.vx;
-  player.y += player.vy;
+    if(gameOver || reachedMoon) return;
 
-  // world bounds left/right wrap
-  if(player.x + player.w < 0) player.x = W;
-  if(player.x > W) player.x = -player.w;
+    // Character automatic upward movement
+    player.y -= 2;
 
-  // platform collisions
-  player.onGround = false;
-  for(let p of platforms){
-    // moving platforms update
-    if(p.dx){
-      p.x += p.dx;
-      if(Math.abs(p.x - p.originX) > p.range) p.dx *= -1;
+    // Lateral movement
+    if(keys['ArrowLeft'] || keys['a']) player.x -= player.speed;
+    if(keys['ArrowRight'] || keys['d']) player.x += player.speed;
+    player.x = Math.max(0, Math.min(width - player.width, player.x));
+
+    // Spawn meteors
+    if(Date.now() - lastSpawn > spawnRate){
+        spawnMeteor();
+        lastSpawn = Date.now();
     }
-    // collision check (only when falling)
-    if(player.vy > 0 && player.x + player.w > p.x && player.x < p.x + p.w && player.y + player.h > p.y && player.y + player.h < p.y + p.h + player.vy + 8){
-      player.y = p.y - player.h;
-      player.vy = 0;
-      player.onGround = true;
-      // give small boost on certain platforms
-      if(p.w < 110 && Math.random() > 0.98){
-        player.vy = -13;
-      }
+
+    // Update meteors
+    meteors.forEach(m => {
+        m.update();
+        // Collision detection
+        if(player.x < m.x + m.width && player.x + player.width > m.x &&
+           player.y < m.y + m.height && player.y + player.height > m.y){
+            gameOver = true;
+            document.getElementById("message").innerText = "Game Over";
+            document.getElementById("message").style.display = "block";
+        }
+    });
+
+    // Check if reached moon
+    if(player.y <= moonY){
+        reachedMoon = true;
+        document.getElementById("message").style.display = "block";
     }
-  }
 
-  // update camera to follow player upward
-  const worldY = player.y + cameraY;
-  if(worldY < H*0.45){
-    cameraY += (H*0.45 - worldY);
-  }
-
-  // update score: higher is better (ascent)
-  const currentHeight = Math.max(0, Math.floor(- (player.y + cameraY - (H - 120))));
-  if(currentHeight > maxHeight){ maxHeight = currentHeight; score = maxHeight; document.getElementById('score').innerText = score; }
-  document.getElementById('height').innerText = currentHeight;
-
-  // check win: if player reaches moon y region
-  if(player.y + cameraY < moon.y + moon.r + 40){
-    win = true;
-    document.getElementById('status').innerHTML = "Durum: <strong>KAZANDIN! 🥳</strong>";
-  }
-
-  // falling death if below bottom by long margin
-  if(player.y + cameraY > H + 800){
-    gameOver = true;
-    document.getElementById('status').innerHTML = "Durum: <strong>YERE ÇARPTIN — YENİDEN DENE</strong>";
-  }
-
-  draw();
-  requestAnimationFrame(update);
+    score = Math.max(score, Math.floor(-player.y));
+    document.getElementById("score").innerText = "Score: " + score;
 }
 
-/* === Drawing === */
 function draw(){
-  ctx.clearRect(0,0,W,H);
+    ctx.clearRect(0,0,width,height);
 
-  // background stars
-  for(let i=0;i<120;i++){
-    const sx = (i*37)%W;
-    const sy = ((i*73)%H + (i*11))%H;
-    ctx.fillStyle = "rgba(255,255,255,0.03)";
-    ctx.fillRect((sx*1.3)%W, (sy*1.1)%H, 1,1);
-  }
+    // Draw player
+    ctx.drawImage(charImg, player.x, player.y, player.width, player.height);
 
-  // translate by cameraY
-  ctx.save();
-  ctx.translate(0, cameraY);
+    // Draw meteors
+    meteors.forEach(m => m.draw());
 
-  // draw moon
-  const moonScreenY = moon.y;
-  // glow
-  const grd = ctx.createRadialGradient(moon.x+moon.r/2, moonScreenY+moon.r/2, 10, moon.x+moon.r/2, moonScreenY+moon.r/2, 140);
-  grd.addColorStop(0, 'rgba(255,248,230,0.95)');
-  grd.addColorStop(1, 'rgba(240,242,250,0.0)');
-  ctx.fillStyle = grd;
-  ctx.beginPath();
-  ctx.arc(moon.x+moon.r/2, moonScreenY+moon.r/2, 140, 0, Math.PI*2);
-  ctx.fill();
-
-  // moon body
-  ctx.fillStyle = "#f5f5f8";
-  ctx.beginPath();
-  ctx.arc(moon.x+moon.r/2, moonScreenY+moon.r/2, moon.r, 0, Math.PI*2);
-  ctx.fill();
-  // craters
-  ctx.fillStyle = "#e0e0e6";
-  ctx.beginPath();
-  ctx.arc(moon.x+moon.r/2 - 18, moonScreenY+moon.r/2 - 8, 12, 0, Math.PI*2);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.arc(moon.x+moon.r/2 + 26, moonScreenY+moon.r/2 + 16, 10, 0, Math.PI*2);
-  ctx.fill();
-
-  // draw platforms
-  for(let p of platforms){
-    ctx.fillStyle = "rgba(200,220,255,0.08)";
-    ctx.fillRect(p.x, p.y, p.w, p.h);
-    // platform highlight
-    ctx.fillStyle = "rgba(255,255,255,0.04)";
-    ctx.fillRect(p.x+4, p.y-6, Math.min(40, p.w-8), 6);
-  }
-
-  // draw player (with sprite)
-  if(player.sprite.complete){
-    ctx.drawImage(player.sprite, player.x, player.y, player.w, player.h);
-  } else {
-    // placeholder rectangle
-    ctx.fillStyle = "#ffd166";
-    ctx.fillRect(player.x, player.y, player.w, player.h);
-  }
-
-  // helper: draw a small rocket flame when moving
-  if(Math.abs(player.vx) > 0.1){
-    ctx.fillStyle = "rgba(255,150,40,0.9)";
+    // Draw moon
+    ctx.fillStyle = 'white';
     ctx.beginPath();
-    ctx.ellipse(player.x + player.w/2, player.y + player.h + 8, 8, 4, 0, 0, Math.PI*2);
+    ctx.arc(width/2, moonY+25, 50,0,Math.PI*2);
     ctx.fill();
-  }
-
-  ctx.restore();
-
-  // HUD overlay: title near moon when close
-  if((player.y + cameraY) < moon.y + 500){
-    ctx.save();
-    ctx.globalAlpha = 0.95;
-    ctx.font = "24px Arial";
-    ctx.fillStyle = "#fff";
-    ctx.fillText("AY", W/2 - 16, 40);
-    ctx.restore();
-  }
-
-  // draw simple ground horizon
-  ctx.fillStyle = "rgba(255,255,255,0.02)";
-  ctx.fillRect(0, H-18, W, 18);
-
-  // end messages
-  if(win){
-    ctx.fillStyle = "rgba(0,0,0,0.5)";
-    ctx.fillRect(W/2 - 220, H/2 - 80, 440, 160);
-    ctx.fillStyle = "#fff";
-    ctx.font = "28px Arial";
-    ctx.fillText("Tebrikler! Ay'a Ulaştın 🚀", W/2 - 170, H/2 - 20);
-    ctx.font = "18px Arial";
-    ctx.fillText("Point: " + score, W/2 - 40, H/2 + 16);
-  }
-  if(gameOver){
-    ctx.fillStyle = "rgba(0,0,0,0.5)";
-    ctx.fillRect(W/2 - 200, H/2 - 70, 400, 140);
-    ctx.fillStyle = "#fff";
-    ctx.font = "22px Arial";
-    ctx.fillText("Yere Çarptın — Yeniden Dene", W/2 - 170, H/2 - 10);
-    ctx.font = "16px Arial";
-    ctx.fillText("Yeniden başlatmak için 'Yeniden Başlat' butonuna tıkla.", W/2 - 170, H/2 + 20);
-  }
 }
 
-/* === Resize handling === */
-window.addEventListener('resize', ()=>{
-  // keep canvas size fixed for consistent experience
-});
+function loop(){
+    update();
+    draw();
+    requestAnimationFrame(loop);
+}
 
-/* Start game */
-requestAnimationFrame(update);
-
-/* === Create downloadable file link === */
-const blob = new Blob([document.documentElement.outerHTML], {type: 'text/html'});
-const url = URL.createObjectURL(blob);
-const dl = document.getElementById('downloadLink');
-dl.href = url;
-dl.download = 'aya_ulas_oyun.html';
-dl.textContent = "Oyunu indir (aya_ulas_oyun.html)";
+loop();
 </script>
 </body>
 </html>
