@@ -25,20 +25,20 @@
 <div id="gameWrap">
   <header>
     <div>
-      <h1>Ay'a Ulaş — Basit Oyun</h1>
-      <div class="controls">Yön tuşları ile sağ/sol hareket. Boşluk ile zıpla. Amaç: Ay'a (üstteki hedefe) ulaşmak.</div>
+      <h1>Reach the Moon </h1>
+      <div class="controls">Use the arrow keys to move right/left. Press the space bar to jump. Mission: Reach the moon (the target above).</div>
     </div>
     <div>
-      <button id="restartBtn">Yeniden Başlat</button>
+      <button id="restartBtn">Restart</button>
     </div>
   </header>
 
   <canvas id="canvas" width="900" height="640"></canvas>
 
   <div id="hud">
-    <div class="panel">Puan: <span id="score">0</span></div>
-    <div class="panel">Yükseklik: <span id="height">0</span> m</div>
-    <div class="panel" id="status">Durum: <strong>OYUNDA</strong></div>
+    <div class="panel">Point: <span id="score">0</span></div>
+    <div class="panel">Height: <span id="height">0</span> m</div>
+   
   </div>
 
   <div id="instructions">
@@ -125,7 +125,7 @@ function resetGame(){
   player.vy = 0;
   cameraY = 0;
   createInitialPlatforms();
-  document.getElementById('status').innerHTML = "Durum: <strong>OYUNDA</strong>";
+  document.getElementById('status').innerHTML = "";
 }
 
 resetGame();
@@ -294,7 +294,7 @@ function draw(){
     ctx.font = "28px Arial";
     ctx.fillText("Tebrikler! Ay'a Ulaştın 🚀", W/2 - 170, H/2 - 20);
     ctx.font = "18px Arial";
-    ctx.fillText("Puan: " + score, W/2 - 40, H/2 + 16);
+    ctx.fillText("Point: " + score, W/2 - 40, H/2 + 16);
   }
   if(gameOver){
     ctx.fillStyle = "rgba(0,0,0,0.5)";
